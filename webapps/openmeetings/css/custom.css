@@ -1,1 +1,29 @@
 /* Licensed under the Apache License, Version 2.0 (the "License") http://www.apache.org/licenses/LICENSE-2.0 */
+.main.room #chatPanel #chatPopup .control.block i::before {
+	content: "\f104\f104";
+}
+.main.room #chatPanel.wide #chatPopup .control.block i::before {
+    content: "\f105";
+}
+.main.room #chatPanel.opened #chatPopup .control.block i::before {
+    content: "\f104";
+}
+.btn-outline-primary {
+    color:#fff;
+    background-color: #0273C6;
+    border-color: #0273C6;
+}
+
+.btn-outline-primary:hover {
+ color:#000000;
+ background-color:#0373fc;
+ border-color:#0373fc
+}
+
+.table, .msg-row {
+ position: relative;
+ border-radius: 10px 10px 10px;
+ background: #c6ffb3;
+ padding: 4px 8px 4px 8px;
+ margin-top: 10px;
+}

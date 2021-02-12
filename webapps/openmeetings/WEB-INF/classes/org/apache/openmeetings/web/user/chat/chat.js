@@ -114,11 +114,12 @@ var Chat = function() {
 		, SEND_ENTER = 'enter', SEND_CTRL = 'ctrl'
 		, audio = new Audio('./public/chat_message.mp3')
 		;
-	let p, ctrlBlk, tabs, openedHeight = "345px", openedWidth = "300px", allPrefix = "All"
+	let p, ctrlBlk, tabs, openedHeight = "345px", openedWidth = "500px", allPrefix = "All"
 		, roomPrefix = "Room ", typingTimer, roomMode = false
 		, editor = $('#chatMessage .wysiwyg-editor'), muted = false, sendOn, DEF_SEND
 		, userId, inited = false, newMsgNotification
 		;
+	let userscolor = new Object();
 
 	function __setCssVar(key, _val) {
 		const val = ('' + _val).endsWith('px') ? _val : _val + 'px';
@@ -218,8 +219,11 @@ var Chat = function() {
 	function isClosed() {
 		return p.hasClass('closed');
 	}
+        function isWide() {
+        	return p.hasClass('wide');
+        }
 	function activateTab(id) {
-		if (isClosed()) {
+		if (isClosed() || isWide()) {
 			tabs.find('.nav.nav-tabs .nav-link').each(function() {
 				const self = $(this)
 					, tabId = self.attr('aria-controls')
@@ -393,6 +397,16 @@ var Chat = function() {
 							.css('top', ($(this).closest('.msg-row')[0].offsetTop + 20) + 'px')
 							.show();
 					});
+				if (userscolor[cm.from.id]==undefined) {
+				    let ue=Object.keys(userscolor).length;
+				    let hc=10+ue*50; 
+				    if (hc > 360) {
+				     hc=10+Math.floor(Math.random()*350); 
+				    }
+				    userscolor[cm.from.id]='hsl('+ hc +',25%,90%)';
+				    console.log(userscolor[cm.from.id]);
+				}
+				row.parent()[0].style.backgroundColor=userscolor[cm.from.id];
 				if (cm.needModeration) {
 					row.parent().addClass('need-moderation');
 					row.data('roomId', cm.scope.substring(9))
@@ -433,6 +447,13 @@ var Chat = function() {
 							new Notification(newMsgNotification, {
 								tag: 'new_chat_msg'
 							});
+						        audio.play()
+							.then(function() {
+								// Automatic playback started!
+							}).catch(function() {
+								// Automatic playback failed.
+							});
+
 						}
 						if (Notification.permission === 'granted') {
 							_newMessage();
@@ -469,11 +490,51 @@ var Chat = function() {
 			}
 		});
 	}
+	function _setOpenedw() {
+		__setCssWidth(innerWidth);
+		p.addClass('wide').css({'height': '', 'width': ''});
+		p.resizable({
+		    handles: (Settings.isRtl ? 'e' : 'w')
+		    , minWidth: 120
+		    , stop: function(event, ui) {
+			p.css({'left': '', 'width': '', 'height': ''});
+			openedWidth = ui.size.width + 'px';
+			__setCssWidth(openedWidth);
+		    }
+		});
+	}
 	function _removeResize() {
 		if (p.resizable('instance') !== undefined) {
 			p.resizable('destroy');
 		}
 	}
+        function _openw(handler) {
+        	if (!isClosed() && !isWide()) {
+        	    //ctrlBlk.removeClass('bg-warning');
+        	    let opts;
+        	    if (roomMode) {
+        		opts = {width: innerWidth};
+        	    } else {
+        		opts = {height: openedHeight};
+        		p.resizable("option", "disabled", false);
+        	    }
+        	    p.removeClass('closed').animate(opts, 1000, function() {
+        		__hideActions();
+        		p.removeClass('closed');
+        		p.css({'height': '', 'width': ''});
+        		if (typeof(handler) === 'function') {
+        		    handler();
+        		}
+        		ctrlBlk.attr('title', ctrlBlk.data('ttl-undock'));
+        		if (roomMode) {
+        		    _setOpenedw();
+        		} else {
+        		    __setCssHeight(openedHeight);
+        		}
+        		_setAreaHeight();
+        	    });
+        	}
+        }
 	function _open(handler) {
 		if (isClosed()) {
 			ctrlBlk.removeClass('bg-warning');
@@ -491,7 +552,7 @@ var Chat = function() {
 				if (typeof(handler) === 'function') {
 					handler();
 				}
-				ctrlBlk.attr('title', ctrlBlk.data('ttl-undock'));
+				ctrlBlk.attr('title', ctrlBlk.data('ttl-exdock'));
 				if (roomMode) {
 					_setOpened();
 				} else {
@@ -512,6 +573,7 @@ var Chat = function() {
 			}
 			p.animate(opts, 1000, function() {
 				p.addClass('closed').css({'height': '', 'width': ''});
+				p.removeClass('wide');
 				if (roomMode) {
 					__setCssWidth(closedSizePx);
 					_removeResize();
@@ -528,8 +590,10 @@ var Chat = function() {
 	function _toggle() {
 		if (isClosed()) {
 			_open();
-		} else {
+		} else if (isWide()) {
 			_close();
+	        } else {
+			_openw();
 		}
 	}
 	function _editorAppend(_emoticon) {
